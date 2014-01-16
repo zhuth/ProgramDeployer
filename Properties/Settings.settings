@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ProgramDeployerServer.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="Port" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">20023</Value>
+    </Setting>
+    <Setting Name="ClientsList" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://taikor.innovors.info:20023/self/;http://182.141.183.231:20023/self/;http://182.141.183.232:20023/self/;http://taikor.innovors.info:20023/m/;http://182.141.183.231:20023/m/;http://182.141.183.232:20023/m/</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
