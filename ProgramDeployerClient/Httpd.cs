@@ -17,7 +17,7 @@ namespace ProgramDeployerClient
         public int Port { get; private set; }
         public bool Running { get; set; }
 
-        public delegate byte[] RequestHandler(string url, string method, PropertiesParser queryStrings, Socket clientSocket, out string contentType);
+        public delegate byte[] RequestHandler(string url, string method, PropertiesParser queryStrings, BinaryBuffer rawData, out string contentType);
         public event RequestHandler RequestArrival;
 
         private TcpListener _listener;
@@ -75,7 +75,7 @@ namespace ProgramDeployerClient
 
         private void handleRequest(Socket clientSocket)
         {
-            byte[] buffer = new byte[1024]; // 注意：如果使用 PUSH 方法更新文件，在 PUSH /URL/SIZE HTTP/1.1 之后应以 0 填充，直到填满 1k 字节。
+            byte[] buffer = new byte[1024];
             int receivedBCount = clientSocket.Receive(buffer); // Receive the request
             string strReceived = charEncoder.GetString(buffer, 0, receivedBCount);
 
@@ -99,7 +99,14 @@ namespace ProgramDeployerClient
 
             byte[] toSend = new byte[0];
             string contentType = "text/html";
-            if (RequestArrival != null) toSend = RequestArrival(requestedUrl, httpMethod, queryStrings, clientSocket, out contentType);
+            byte[] nbuffer;
+            int newline = 0;
+            for (; newline < receivedBCount; ++newline)
+                if (buffer[newline] == (byte)'\n') break;
+            nbuffer = new byte[receivedBCount - newline - 1];
+            Array.Copy(buffer, newline + 1, nbuffer, 0, receivedBCount - newline - 1);
+
+            if (RequestArrival != null) toSend = RequestArrival(requestedUrl, httpMethod, queryStrings, new BinaryBuffer(0, nbuffer, new NetworkStream(clientSocket)), out contentType);
 
             if (toSend == null)
             {

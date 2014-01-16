@@ -47,16 +47,11 @@ namespace ProgramDeployerServer
                         bool isFile = File.Exists(args[2]);
                         if (isFile) // 是文件，直接比较并上传
                         {
-                            foreach (string client in clients)
-                            {
-                                PushFile(client + args[1], args[2]);
-                            }
+                            PushFile(clients, args[1], args[2]);
                         }
                         else // 不是文件，要展开各个子目录，逐个比较
                         {
-                            foreach (string client in clients){
-                                PushDirectory(client + args[1], args[2]);
-                            }
+                            PushDirectory(clients, args[1], args[2]);
                         }
                         break;
                     case "proc":
@@ -65,6 +60,7 @@ namespace ProgramDeployerServer
                         {
                             try
                             {
+                                Console.WriteLine("- proc:" + args[1] + " " + args[2] + " @" + client);
                                 new WebClient().DownloadString(client + "proc?action=" + args[1] + "&name=" + args[2]);
                             }
                             catch { }
@@ -74,29 +70,45 @@ namespace ProgramDeployerServer
             }
         }
 
-        public static void PushFile(string remoteUrl, string localFilePath)
+        public static void PushFile(IEnumerable<string> clients, string remotePath, string localFilePath)
         {
-            bool doPush = false;
-            try
+            Console.WriteLine("- " + localFilePath);
+            string localMD5 = ProgramDeployerClient.FileMD5.HashFile(localFilePath, "md5");
+            foreach (string client in clients)
             {
-                string md5 = new WebClient().DownloadString(remoteUrl + "?md5").Trim();
-                if (ProgramDeployerClient.FileMD5.HashFile(localFilePath, "md5") != md5) doPush = true;
-            } catch(WebException){
-                doPush = true;
+                int trials = 0;
+                bool doPush = false;
+                try
+                {
+                    string md5 = new WebClient().DownloadString(client + remotePath + "?md5").Trim();
+                    if (localMD5 != md5) doPush = true;
+                }
+                catch (WebException)
+                {
+                    doPush = true;
+                }
+                if (!doPush) return;
+                Console.WriteLine("    >> " + client + remotePath);
+            Retry:
+                try
+                {
+                    ProgramDeployerClient.Httpd.PushFile(client + remotePath, localFilePath);
+                }
+                catch(Exception ex)
+                {
+                    if (trials++ < 10) goto Retry;
+                    else Console.WriteLine("[Error] " + ex.Message);
+                }
             }
-            if (!doPush) return;
-            Console.WriteLine("\t>> " + remoteUrl);
-            ProgramDeployerClient.Httpd.PushFile(remoteUrl, localFilePath);
         }
 
-        public static void PushDirectory(string remoteUrlDir, string localDirPath)
+        public static void PushDirectory(IEnumerable<string> clients, string remoteDirPath, string localDirPath)
         {
-            if (!remoteUrlDir.EndsWith("/")) remoteUrlDir+="/";
+            if (!remoteDirPath.EndsWith("/")) remoteDirPath += "/";
             foreach (string f in Directory.GetFileSystemEntries(localDirPath, "*", SearchOption.AllDirectories))
             {
-                Console.WriteLine("- " + f);
                 string remotePath = f.Substring(localDirPath.Length + 1).Replace('\\', '/');
-                PushFile(remoteUrlDir + remotePath, f);
+                PushFile(clients, remoteDirPath + remotePath, f);
             }
         }
 

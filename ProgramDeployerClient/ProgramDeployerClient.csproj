@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryBuffer.cs" />
     <Compile Include="FileMD5.cs" />
     <Compile Include="frmClientMain.cs">
       <SubType>Form</SubType>

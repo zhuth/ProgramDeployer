@@ -25,13 +25,13 @@ namespace ProgramDeployerClient
         {
             InitializeComponent();
 
-            if (!Application.ExecutablePath.EndsWith(@"\" + PROC_NAME + ".exe"))
+            if (!Application.ExecutablePath.ToLower().EndsWith(@"\" + PROC_NAME.ToLower() + ".exe"))
             {
                 Process[] otherInstances = Process.GetProcessesByName(PROC_NAME);
                 foreach (var proc in otherInstances)
                     proc.Kill();
                 string dst = Application.ExecutablePath.Substring(0, Application.ExecutablePath.LastIndexOf('\\') + 1) + PROC_NAME + ".exe";
-                File.Copy(Application.ExecutablePath, dst);
+                File.Copy(Application.ExecutablePath, dst, true);
                 Process.Start(dst);
                 Environment.Exit(0);
             }
@@ -68,7 +68,7 @@ namespace ProgramDeployerClient
             return null;
         }
 
-        byte[] _httpd_RequestArrival(string Url, string Method, PropertiesParser QueryStrings, Socket clientSocket, out string ContentType)
+        byte[] _httpd_RequestArrival(string Url, string Method, PropertiesParser QueryStrings, BinaryBuffer rawData, out string ContentType)
         {
 #if !DEBUG
             try
@@ -165,7 +165,7 @@ namespace ProgramDeployerClient
                             while (length > 0)
                             {
                                 byte[] buf = new byte[102400];
-                                int recv = clientSocket.Receive(buf);
+                                int recv = rawData.Read(ref buf);
                                 length -= recv;
                                 sw.Write(buf, 0, recv);
                             }
