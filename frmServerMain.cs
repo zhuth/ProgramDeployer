@@ -30,7 +30,7 @@ namespace ProgramDeployerServer
         {
             var ofd = new OpenFileDialog();
             if (ofd.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-            Deployer.Run(ofd.FileName);
+            new Deployer(ofd.FileName).Run();
         }
 
     }

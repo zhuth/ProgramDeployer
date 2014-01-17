@@ -11,6 +11,15 @@ namespace ProgramDeployerServer
 {
     public class Deployer
     {
+        public string FileName { get; set; }
+        
+        private List<string> _clients = new List<string>();
+
+        public Deployer(string filename)
+        {
+            FileName = filename;
+        }
+
         // 好吧我们来说明一下这个部署脚本怎么写
         // 每一行的格式是 [command] [args]
         // 这些是合法的 command：
@@ -18,22 +27,19 @@ namespace ProgramDeployerServer
         //      map [remote] [local]        将本地文件（夹） [local] 上传到远程路径 [remote] 上
         //      proc [action] [name]        kill 或 start 一个进程
         // # 开始的是注释
-
-        public static void Run(string scriptfile)
+        public void Run()
         {
-            List<string> clients = new List<string>();
-
-            foreach (string ln in File.ReadAllLines(scriptfile))
+            foreach (string ln in File.ReadAllLines(FileName))
             {
                 string line = noannoations(ln).Trim();
-                string[] args = Regex.Split(line, @"\s+");
+                string[] args = split(line);
 
                 switch (args[0].ToLower())
                 {
                     case "client":
-                        clients.Clear();
+                        _clients.Clear();
                         for (int i = 1; i < args.Length; ++i)
-                            clients.Add(args[i] +(args[i].EndsWith("/")  ? "" :"/"));
+                            _clients.Add(args[i] +(args[i].EndsWith("/")  ? "" :"/"));
                         break;
                     case "wait":
                         int delay;
@@ -47,16 +53,16 @@ namespace ProgramDeployerServer
                         bool isFile = File.Exists(args[2]);
                         if (isFile) // 是文件，直接比较并上传
                         {
-                            PushFile(clients, args[1], args[2]);
+                            PushFile(args[1], args[2]);
                         }
                         else // 不是文件，要展开各个子目录，逐个比较
                         {
-                            PushDirectory(clients, args[1], args[2]);
+                            PushDirectory(args[1], args[2], args.Length > 3 ? args[3] : null);
                         }
                         break;
                     case "proc":
                         if (args.Length < 3) continue;
-                        foreach (string client in clients)
+                        foreach (string client in _clients)
                         {
                             try
                             {
@@ -70,11 +76,13 @@ namespace ProgramDeployerServer
             }
         }
 
-        public static void PushFile(IEnumerable<string> clients, string remotePath, string localFilePath)
+        public void PushFile(string remotePath, string localFilePath)
         {
+            if (!File.Exists(localFilePath)) return;
+
             Console.WriteLine("- " + localFilePath);
             string localMD5 = ProgramDeployerClient.FileMD5.HashFile(localFilePath, "md5");
-            foreach (string client in clients)
+            foreach (string client in _clients)
             {
                 int trials = 0;
                 bool doPush = false;
@@ -102,13 +110,16 @@ namespace ProgramDeployerServer
             }
         }
 
-        public static void PushDirectory(IEnumerable<string> clients, string remoteDirPath, string localDirPath)
+        public void PushDirectory(string remoteDirPath, string localDirPath, string pattern)
         {
             if (!remoteDirPath.EndsWith("/")) remoteDirPath += "/";
+            Regex regPattern = new Regex(pattern ?? ".*");
+
             foreach (string f in Directory.GetFileSystemEntries(localDirPath, "*", SearchOption.AllDirectories))
             {
+                if (!regPattern.IsMatch(f)) continue;
                 string remotePath = f.Substring(localDirPath.Length + 1).Replace('\\', '/');
-                PushFile(clients, remoteDirPath + remotePath, f);
+                PushFile(remoteDirPath + remotePath, f);
             }
         }
 
@@ -117,6 +128,32 @@ namespace ProgramDeployerServer
             int sharp = str.IndexOf('#');
             if (sharp < 0) return str;
             return str.Substring(0, sharp);
+        }
+
+        private static string[] split(string line)
+        {
+            line = line.Trim() + " ";
+            List<string> result = new List<string>();
+            bool qmark = false;
+            string sb = "";
+            for (int i = 0; i < line.Length;++i )
+            {
+                if (line[i] == '"')
+                {
+                    qmark = !qmark;
+                    continue;
+                }
+                if (!qmark && char.IsWhiteSpace(line[i]))
+                {
+                    while (i<line.Length && char.IsWhiteSpace(line[i])) ++i;
+                    i--;
+                    result.Add(sb);
+                    sb = "";
+                    continue;
+                }
+                sb += line[i];
+            }
+            return result.ToArray();
         }
     }
 }

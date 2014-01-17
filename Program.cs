@@ -17,7 +17,7 @@ namespace ProgramDeployerServer
             string[] args = Environment.GetCommandLineArgs();
             if (args.Length > 1 && System.IO.File.Exists(args[1]))
             {
-                Deployer.Run(args[1]);
+                new Deployer(args[1]).Run();
                 return;
             }
 
