@@ -20,6 +20,16 @@ namespace ProgramDeployerServer
                 new Deployer(args[1]).Run();
                 return;
             }
+            else
+            {
+                var dp = new Deployer();
+                do
+                {
+                    var cmd = Console.ReadLine();
+                    if (cmd == "quit") return;
+                    dp.Run(cmd);
+                } while (true);
+            }
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

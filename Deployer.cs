@@ -20,6 +20,8 @@ namespace ProgramDeployerServer
             FileName = filename;
         }
 
+        public Deployer() { }
+
         // 好吧我们来说明一下这个部署脚本怎么写
         // 每一行的格式是 [command] [args]
         // 这些是合法的 command：
@@ -31,48 +33,53 @@ namespace ProgramDeployerServer
         {
             foreach (string ln in File.ReadAllLines(FileName))
             {
-                string line = noannoations(ln).Trim();
-                string[] args = split(line);
+                Run(ln);
+            }
+        }
 
-                switch (args[0].ToLower())
-                {
-                    case "client":
-                        _clients.Clear();
-                        for (int i = 1; i < args.Length; ++i)
-                            _clients.Add(args[i] +(args[i].EndsWith("/")  ? "" :"/"));
-                        break;
-                    case "wait":
-                        int delay;
-                        if (args.Length > 1 && int.TryParse(args[1], out delay))
-                            System.Threading.Thread.Sleep(delay);
-                        break;
-                    case "map":
-                        if (args.Length < 3) continue;
-                        if (!File.Exists(args[2]) && !Directory.Exists(args[2])) continue;
-                        // 判断是文件还是目录
-                        bool isFile = File.Exists(args[2]);
-                        if (isFile) // 是文件，直接比较并上传
+        public void Run(string line)
+        {
+            line = noannoations(line).Trim();
+            string[] args = split(line);
+
+            switch (args[0].ToLower())
+            {
+                case "client":
+                    _clients.Clear();
+                    for (int i = 1; i < args.Length; ++i)
+                        _clients.Add(args[i] + (args[i].EndsWith("/") ? "" : "/"));
+                    break;
+                case "wait":
+                    int delay;
+                    if (args.Length > 1 && int.TryParse(args[1], out delay))
+                        System.Threading.Thread.Sleep(delay);
+                    break;
+                case "map":
+                    if (args.Length < 3) return;
+                    if (!File.Exists(args[2]) && !Directory.Exists(args[2])) return;
+                    // 判断是文件还是目录
+                    bool isFile = File.Exists(args[2]);
+                    if (isFile) // 是文件，直接比较并上传
+                    {
+                        PushFile(args[1], args[2]);
+                    }
+                    else // 不是文件，要展开各个子目录，逐个比较
+                    {
+                        PushDirectory(args[1], args[2], args.Length > 3 ? args[3] : null);
+                    }
+                    break;
+                case "proc":
+                    if (args.Length < 3) return;
+                    foreach (string client in _clients)
+                    {
+                        try
                         {
-                            PushFile(args[1], args[2]);
+                            Console.WriteLine("- proc:" + args[1] + " " + args[2] + " @" + client);
+                            new WebClient().DownloadString(client + "proc?action=" + args[1] + "&name=" + args[2]);
                         }
-                        else // 不是文件，要展开各个子目录，逐个比较
-                        {
-                            PushDirectory(args[1], args[2], args.Length > 3 ? args[3] : null);
-                        }
-                        break;
-                    case "proc":
-                        if (args.Length < 3) continue;
-                        foreach (string client in _clients)
-                        {
-                            try
-                            {
-                                Console.WriteLine("- proc:" + args[1] + " " + args[2] + " @" + client);
-                                new WebClient().DownloadString(client + "proc?action=" + args[1] + "&name=" + args[2]);
-                            }
-                            catch { }
-                        }
-                        break;
-                }
+                        catch { }
+                    }
+                    break;
             }
         }
 
