@@ -12,6 +12,7 @@ ProgramDeployer
 		map alias/ D:\Studio\XXXX\bin\Debug # 将本地的文件夹部署到客户端
 		map alias/MediaImportTool.exe.config D:\Studio\XXXXXX\MediaImportTool\bin\Release\MediaImportTool.exe.config # 将本地的某个文件部署到客户端
 		proc start D:\MediaTest\run.bat # 启动指定的程序
+		download http://XXXXXXXXX:20023/alias/SomeFile.bin D:\ # 打开浏览器，下载客户端上的指定文件到本地
 
 其中客户端的路径别名 alias 在 ProgramDeployerClient.config 的设置中给定，格式如下：
 
@@ -20,3 +21,4 @@ ProgramDeployer
 		</setting>
 
 即：别名=路径，中间用;分割。
+在客户端和服务器端的 *.config 文件中需要给定 HashKey，只有两端的 HashKey 相同才能互传文件。
