@@ -240,11 +240,16 @@ namespace ProgramDeployerClient
 
         public static string DownloadString(string urlAndQuery, string hashkey)
         {
+            return new WebClient().DownloadString(GetSignedUrl(urlAndQuery, hashkey)).Trim();
+        }
+
+        public static string GetSignedUrl(string urlAndQuery, string hashkey)
+        {
             Uri uri = new Uri(urlAndQuery);
             var props = new ProgramDeployerClient.PropertiesParser(uri.Query, '&');
             string sign = ProgramDeployerClient.Httpd.Sign(uri.AbsolutePath, props, Properties.Settings.Default.HashKey);
             if (urlAndQuery.Contains('?')) urlAndQuery += "&"; else urlAndQuery += "?";
-            return new WebClient().DownloadString(urlAndQuery + "sign=" + sign).Trim();
+            return urlAndQuery + "sign=" + sign;
         }
     }
 }

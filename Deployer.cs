@@ -82,6 +82,11 @@ namespace ProgramDeployerServer
                         catch { }
                     }
                     break;
+                case "download":
+                    if (args.Length < 2) return;
+                    string path = ProgramDeployerClient.Httpd.GetSignedUrl(args[1], Properties.Settings.Default.HashKey);
+                    System.Diagnostics.Process.Start(path);
+                    break;
             }
         }
 
