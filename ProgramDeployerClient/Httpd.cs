@@ -110,9 +110,10 @@ namespace ProgramDeployerClient
 
             if (toSend == null)
             {
-                if (contentType == "404") notFound(clientSocket);
-                else if (contentType == "500") internalServerError(clientSocket);
-                else notImplemented(clientSocket);
+                if (contentType == "404") returnError(clientSocket, contentType, "Not Found");
+                else if (contentType == "500") returnError(clientSocket, contentType, "Internal Server Error");
+                else if (contentType == "403") returnError(clientSocket, contentType, "Forbidden");
+                else returnError(clientSocket, "501", "Not Implemented");
                 return;
             }
             sendOkResponse(clientSocket, toSend, contentType ?? "text/html");
@@ -150,22 +151,10 @@ namespace ProgramDeployerClient
             */
         }
 
-        private void notImplemented(Socket clientSocket)
+        private void returnError(Socket clientSocket, string ErrorCode, string ErrorDescrption)
         {
-            sendResponse(clientSocket, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head><body><h2>501 - Method Not Implemented</h2></body></html>",
-                "501 Not Implemented", "text/html");
-        }
-
-        private void notFound(Socket clientSocket)
-        {
-            sendResponse(clientSocket, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head><body><h2>404 - Not Found</h2></body></html>",
-                "404 Not Found", "text/html");
-        }
-
-        private void internalServerError(Socket clientSocket)
-        {
-            sendResponse(clientSocket, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head><body><h2>500 - Internal Server Error</h2></body></html>",
-                "500 Internal Server Error", "text/html");
+            sendResponse(clientSocket, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head><body><h2>" + ErrorCode + " - " + ErrorDescrption + "</h2></body></html>",
+                ErrorCode + " " + ErrorDescrption, "text/html");
         }
 
         private void sendOkResponse(Socket clientSocket, byte[] bContent, string contentType)
@@ -213,7 +202,7 @@ namespace ProgramDeployerClient
             _thrListener.Start();
         }
 
-        public static void PushFile(string url, string filename)
+        public static void PushFile(string url, string filename, string hashkey)
         {
             Uri uri = new Uri(url);
             TcpClient tc = new TcpClient();
@@ -222,9 +211,11 @@ namespace ProgramDeployerClient
             FileInfo fi = new FileInfo(filename);
             if (!fi.Exists) return;
 
+            string sign = Sign(uri.AbsolutePath, new PropertiesParser("length=" + fi.Length), hashkey);
+
             using (var ns = tc.GetStream())
             {
-                byte[] buf = charEncoder.GetBytes("PUSH " + uri.AbsolutePath + "?length=" + fi.Length + " HTTP/1.1fake\r\n");
+                byte[] buf = charEncoder.GetBytes("PUSH " + uri.AbsolutePath + "?length=" + fi.Length + "&sign=" + sign + " HTTP/1.1fake\r\n");
                 ns.Write(buf, 0, buf.Length);
                 //for (int i = buf.Length + 1; i <= 1024; ++i) ns.WriteByte(0); // 填充0
 
@@ -240,6 +231,20 @@ namespace ProgramDeployerClient
                     }
                 }
             }
+        }
+
+        public static string Sign(string url, PropertiesParser props, string hashkey)
+        {
+            return MD5Crypt.HashString(url + hashkey + props.ToString('&'));
+        }
+
+        public static string DownloadString(string urlAndQuery, string hashkey)
+        {
+            Uri uri = new Uri(urlAndQuery);
+            var props = new ProgramDeployerClient.PropertiesParser(uri.Query, '&');
+            string sign = ProgramDeployerClient.Httpd.Sign(uri.AbsolutePath, props, Properties.Settings.Default.HashKey);
+            if (urlAndQuery.Contains('?')) urlAndQuery += "&"; else urlAndQuery += "?";
+            return new WebClient().DownloadString(urlAndQuery + "sign=" + sign).Trim();
         }
     }
 }

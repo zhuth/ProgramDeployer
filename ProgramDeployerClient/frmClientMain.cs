@@ -76,6 +76,16 @@ namespace ProgramDeployerClient
 #endif
             string filename = convertAliasUrlToFilePath(Url);
 
+            // 检查签名
+            string sign = QueryStrings["sign"];
+            if (sign ==null || sign != Httpd.Sign(Url, QueryStrings, Properties.Settings.Default.HashKey))
+            {
+                ContentType = "403";
+                return null;
+            }
+
+            while (Url.StartsWith("//")) Url = Url.Substring(1);
+
             switch (Method)
             {
                 case "GET":
@@ -88,7 +98,7 @@ namespace ProgramDeployerClient
                         if (Url.StartsWith("/proc"))
                         {
                             Process[] processes;
-                            if (QueryStrings["name"] == null)
+                            if (QueryStrings["name"] == null || QueryStrings["name"] == "*")
                                 processes = Process.GetProcesses();
                             else
                                 processes = Process.GetProcessesByName(QueryStrings["name"]);
@@ -126,12 +136,12 @@ namespace ProgramDeployerClient
                         if (QueryStrings["md5"] != null)
                         {
                             // 计算指定文件的 MD5 值
-                            sbReturn.AppendLine(FileMD5.HashFile(filename, "md5"));
+                            sbReturn.AppendLine(MD5Crypt.HashFile(filename, "md5"));
                         }
                         else if (QueryStrings["sha1"] != null)
                         {
                             // 计算指定文件的 MD5 值
-                            sbReturn.AppendLine(FileMD5.HashFile(filename, "sha1"));
+                            sbReturn.AppendLine(MD5Crypt.HashFile(filename, "sha1"));
                         }
                         else if (QueryStrings["info"] != null)
                         {
@@ -140,6 +150,11 @@ namespace ProgramDeployerClient
                             sbReturn.AppendLine("CreationTimeUtc = " + fi.CreationTimeUtc);
                             sbReturn.AppendLine("LastAccessTimeUtc = " + fi.LastAccessTimeUtc);
                             sbReturn.AppendLine("LastWriteTimeUtc = " + fi.LastWriteTimeUtc);
+                        }
+                        else
+                        {
+                            ContentType = "application/oct-stream";
+                            return File.ReadAllBytes(filename);
                         }
                     }
                     return Encoding.UTF8.GetBytes(sbReturn.ToString());

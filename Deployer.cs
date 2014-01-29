@@ -39,6 +39,8 @@ namespace ProgramDeployerServer
 
         public void Run(string line)
         {
+            ProgramDeployerClient.PropertiesParser props = new ProgramDeployerClient.PropertiesParser("");
+
             line = noannoations(line).Trim();
             string[] args = split(line);
 
@@ -75,7 +77,7 @@ namespace ProgramDeployerServer
                         try
                         {
                             Console.WriteLine("- proc:" + args[1] + " " + args[2] + " @" + client);
-                            new WebClient().DownloadString(client + "proc?action=" + args[1] + "&name=" + args[2]);
+                            Console.WriteLine(ProgramDeployerClient.Httpd.DownloadString(client + "/proc?action=" + args[1] + "&name=" + args[2], Properties.Settings.Default.HashKey));
                         }
                         catch { }
                     }
@@ -88,14 +90,14 @@ namespace ProgramDeployerServer
             if (!File.Exists(localFilePath)) return;
 
             Console.WriteLine("- " + localFilePath);
-            string localMD5 = ProgramDeployerClient.FileMD5.HashFile(localFilePath, "md5");
+            string localMD5 = ProgramDeployerClient.MD5Crypt.HashFile(localFilePath, "md5");
             foreach (string client in _clients)
             {
                 int trials = 0;
                 bool doPush = false;
                 try
                 {
-                    string md5 = new WebClient().DownloadString(client + remotePath + "?md5").Trim();
+                    string md5 = ProgramDeployerClient.Httpd.DownloadString(client + remotePath + "?md5", Properties.Settings.Default.HashKey).Trim();
                     if (localMD5 != md5) doPush = true;
                 }
                 catch (WebException)
@@ -107,7 +109,7 @@ namespace ProgramDeployerServer
             Retry:
                 try
                 {
-                    ProgramDeployerClient.Httpd.PushFile(client + remotePath, localFilePath);
+                    ProgramDeployerClient.Httpd.PushFile(client + remotePath, localFilePath, Properties.Settings.Default.HashKey);
                 }
                 catch(Exception ex)
                 {

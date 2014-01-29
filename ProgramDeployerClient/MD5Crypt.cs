@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ProgramDeployerClient
 {
-    public class FileMD5
+    public class MD5Crypt
     {
         /// <summary>
         /// 计算文件的 MD5 值
@@ -75,6 +75,23 @@ namespace ProgramDeployerClient
                 algorithm = MD5.Create();
             }
             return algorithm.ComputeHash(stream);
+        }
+
+        /// <summary>
+        /// 对文本取哈希值
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="algName"></param>
+        /// <returns></returns>
+        public static string HashString(string text, string algName = "md5")
+        {
+            if (algName != "md5" && algName != "sha1")
+            {
+                throw new ArgumentException();
+            }
+            HashAlgorithm alg = algName == "md5" ? (HashAlgorithm)MD5.Create() : (HashAlgorithm)SHA1.Create();
+            byte[] buf = alg.ComputeHash(Encoding.Unicode.GetBytes(text));
+            return ByteArrayToHexString(buf);
         }
     }
 }

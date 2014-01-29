@@ -10,9 +10,11 @@ namespace ProgramDeployerClient
     {
         Dictionary<string, string> dict = new Dictionary<string, string>();
 
-        public PropertiesParser(string text)
+        public PropertiesParser(string text, params char[] delimeter)
         {
-            string[] lines = text.Split('\r', '\n');
+            if (delimeter.Length == 0) delimeter = new char[] { '&' };
+            if (delimeter[0] == '&' && text.StartsWith("?")) text = text.Substring(1);
+            string[] lines = text.Split(delimeter);
             constructor(lines);
         }
 
@@ -58,11 +60,12 @@ namespace ProgramDeployerClient
         public string ToString(char delimeter = '\n')
         {
             string result = "";
-            foreach (var p in dict)
+            foreach (var p in dict.OrderBy(p => p.Key))
             {
-                result += p.Key + " = " + p.Value + delimeter;
+                if (p.Key == "sign") continue;
+                result += p.Key + "=" + p.Value + delimeter;
             }
-            return result;
+            return result == "" ? "" : result.Substring(0, result.Length - 1);
         }
     }
 }
