@@ -53,10 +53,15 @@ namespace ProgramDeployerServer
                         string remoteUrl = args[i] + (args[i].EndsWith("/") ? "" : "/");
                         try
                         {
-                            new WebClient().DownloadString(remoteUrl + "ping");
-                            _clients.Add(remoteUrl);
+                            if (null !=
+                                ProgramDeployerClient.Httpd.DownloadString(remoteUrl + "ping", Properties.Settings.Default.HashKey)
+                                )
+                                _clients.Add(remoteUrl);
+                            else
+                                Console.WriteLine("Unable to visit " + remoteUrl + ", skipped.");
                         }
-                        catch {
+                        catch
+                        {
                             Console.WriteLine("Unable to visit " + remoteUrl + ", skipped.");
                         }
                     }
