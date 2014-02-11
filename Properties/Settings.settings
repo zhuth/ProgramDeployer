@@ -8,5 +8,8 @@
     <Setting Name="ClientsList" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://taikor.innovors.info:20023/self/;http://182.141.183.231:20023/self/;http://182.141.183.232:20023/self/;http://taikor.innovors.info:20023/m/;http://182.141.183.231:20023/m/;http://182.141.183.232:20023/m/</Value>
     </Setting>
+    <Setting Name="HashKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">taikor</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

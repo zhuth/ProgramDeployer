@@ -8,5 +8,8 @@
     <Setting Name="MonitoringDirectories" Type="System.String" Scope="User">
       <Value Profile="(Default)">self=.;D=D:\;</Value>
     </Setting>
+    <Setting Name="HashKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">taikor</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

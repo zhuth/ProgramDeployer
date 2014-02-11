@@ -30,10 +30,6 @@ namespace ProgramDeployerServer
                     dp.Run(cmd);
                 } while (true);
             }
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmServerMain());
         }
     }
 }

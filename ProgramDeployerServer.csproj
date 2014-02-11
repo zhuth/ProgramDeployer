@@ -48,17 +48,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Deployer.cs" />
-    <Compile Include="frmServerMain.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="frmServerMain.Designer.cs">
-      <DependentUpon>frmServerMain.cs</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="frmServerMain.resx">
-      <DependentUpon>frmServerMain.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

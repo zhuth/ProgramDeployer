@@ -46,7 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BinaryBuffer.cs" />
-    <Compile Include="FileMD5.cs" />
+    <Compile Include="MD5Crypt.cs" />
     <Compile Include="frmClientMain.cs">
       <SubType>Form</SubType>
     </Compile>
