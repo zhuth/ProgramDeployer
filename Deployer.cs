@@ -47,7 +47,17 @@ namespace ProgramDeployerServer
                 case "client":
                     _clients.Clear();
                     for (int i = 1; i < args.Length; ++i)
-                        _clients.Add(args[i] + (args[i].EndsWith("/") ? "" : "/"));
+                    {
+                        string remoteUrl = args[i] + (args[i].EndsWith("/") ? "" : "/");
+                        try
+                        {
+                            new WebClient().DownloadString(remoteUrl + "ping");
+                            _clients.Add(remoteUrl);
+                        }
+                        catch {
+                            Console.WriteLine("Unable to visit " + remoteUrl + ", skipped.");
+                        }
+                    }
                     break;
                 case "wait":
                     int delay;
@@ -120,11 +130,20 @@ namespace ProgramDeployerServer
         public void PushDirectory(string remoteDirPath, string localDirPath, string pattern)
         {
             if (!remoteDirPath.EndsWith("/")) remoteDirPath += "/";
-            Regex regPattern = new Regex(pattern ?? ".*");
+            Regex regPattern = new Regex((pattern ?? ".*").ToLower());
+            HashSet<string> ignoredFiles = new HashSet<string>();
+            if (File.Exists(localDirPath + @"\.deploy-ignore"))
+            {
+                ignoredFiles.Add(".deploy-ignore");
+                foreach (string line in File.ReadAllLines(localDirPath + @"\.deploy-ignore"))
+                    ignoredFiles.Add(line.ToLower());
+            }
 
             foreach (string f in Directory.GetFileSystemEntries(localDirPath, "*", SearchOption.AllDirectories))
             {
-                if (!regPattern.IsMatch(f)) continue;
+                if (!regPattern.IsMatch(f.ToLower())) continue;
+                string filename = f.Substring(f.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+                if (ignoredFiles.Contains(filename.ToLower())) continue;
                 string remotePath = f.Substring(localDirPath.Length + 1).Replace('\\', '/');
                 PushFile(remoteDirPath + remotePath, f);
             }
