@@ -78,7 +78,7 @@ namespace ProgramDeployerClient
 
             // 检查签名
             string sign = QueryStrings["sign"];
-            if (sign ==null || sign != Httpd.Sign(Url, QueryStrings, Properties.Settings.Default.HashKey))
+            if (sign == null || sign != Httpd.Sign(Url, QueryStrings, Properties.Settings.Default.HashKey))
             {
                 ContentType = "403";
                 return null;
