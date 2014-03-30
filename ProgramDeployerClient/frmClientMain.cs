@@ -127,34 +127,50 @@ namespace ProgramDeployerClient
                     }
                     else
                     {
-                        if (!File.Exists(filename))
+                        if (Directory.Exists(filename))
                         {
-                            ContentType = "404";
-                            return null;
-                        }
-                        // 对该文件作什么操作？
-                        if (QueryStrings["md5"] != null)
-                        {
-                            // 计算指定文件的 MD5 值
-                            sbReturn.AppendLine(MD5Crypt.HashFile(filename, "md5"));
-                        }
-                        else if (QueryStrings["sha1"] != null)
-                        {
-                            // 计算指定文件的 MD5 值
-                            sbReturn.AppendLine(MD5Crypt.HashFile(filename, "sha1"));
-                        }
-                        else if (QueryStrings["info"] != null)
-                        {
-                            FileInfo fi = new FileInfo(filename);
-                            sbReturn.AppendLine("Length = " + fi.Length);
-                            sbReturn.AppendLine("CreationTimeUtc = " + fi.CreationTimeUtc);
-                            sbReturn.AppendLine("LastAccessTimeUtc = " + fi.LastAccessTimeUtc);
-                            sbReturn.AppendLine("LastWriteTimeUtc = " + fi.LastWriteTimeUtc);
+                            foreach (var f in Directory.GetFileSystemEntries(filename, "*", SearchOption.AllDirectories))
+                            {
+                                if (f.EndsWith("" + Path.DirectorySeparatorChar) || Directory.Exists(f))
+                                    continue;
+                                string rf = f.Substring(filename.Length);
+                                if (rf[0] == Path.DirectorySeparatorChar)
+                                    rf = rf.Substring(1);
+                                rf = rf.Replace(Path.DirectorySeparatorChar, '/');
+                                sbReturn.Append(rf + "\n");
+                            }
                         }
                         else
                         {
-                            ContentType = "application/oct-stream";
-                            return File.ReadAllBytes(filename);
+                            if (!File.Exists(filename))
+                            {
+                                ContentType = "404";
+                                return null;
+                            }
+                            // 对该文件作什么操作？
+                            if (QueryStrings["md5"] != null)
+                            {
+                                // 计算指定文件的 MD5 值
+                                sbReturn.AppendLine(MD5Crypt.HashFile(filename, "md5"));
+                            }
+                            else if (QueryStrings["sha1"] != null)
+                            {
+                                // 计算指定文件的 MD5 值
+                                sbReturn.AppendLine(MD5Crypt.HashFile(filename, "sha1"));
+                            }
+                            else if (QueryStrings["info"] != null)
+                            {
+                                FileInfo fi = new FileInfo(filename);
+                                sbReturn.AppendLine("Length = " + fi.Length);
+                                sbReturn.AppendLine("CreationTimeUtc = " + fi.CreationTimeUtc);
+                                sbReturn.AppendLine("LastAccessTimeUtc = " + fi.LastAccessTimeUtc);
+                                sbReturn.AppendLine("LastWriteTimeUtc = " + fi.LastWriteTimeUtc);
+                            }
+                            else
+                            {
+                                ContentType = "application/oct-stream";
+                                return File.ReadAllBytes(filename);
+                            }
                         }
                     }
                     return Encoding.UTF8.GetBytes(sbReturn.ToString());
@@ -206,6 +222,11 @@ namespace ProgramDeployerClient
 
         private void Form1_Load(object sender, EventArgs e)
         {
+        }
+
+        private void frmClientMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Environment.Exit(0);
         }
     }
 }

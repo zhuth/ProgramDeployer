@@ -48,6 +48,7 @@
             this.Controls.Add(this.label1);
             this.Name = "frmClientMain";
             this.Text = "程序部署客户端";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmClientMain_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

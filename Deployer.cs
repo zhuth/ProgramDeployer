@@ -47,7 +47,8 @@ namespace ProgramDeployerServer
             switch (args[0].ToLower())
             {
                 case "client":
-                    _clients.Clear();
+                    if (args.Length == 1)
+                        _clients.Clear();
                     for (int i = 1; i < args.Length; ++i)
                     {
                         string remoteUrl = args[i] + (args[i].EndsWith("/") ? "" : "/");
@@ -85,6 +86,9 @@ namespace ProgramDeployerServer
                         PushDirectory(args[1], args[2], args.Length > 3 ? args[3] : null);
                     }
                     break;
+                case "rmap":
+                    DownloadDirectory(args[1], args[2]);
+                    break;
                 case "proc":
                     if (args.Length < 3) return;
                     foreach (string client in _clients)
@@ -98,9 +102,8 @@ namespace ProgramDeployerServer
                     }
                     break;
                 case "download":
-                    if (args.Length < 2) return;
-                    string path = ProgramDeployerClient.Httpd.GetSignedUrl(args[1], Properties.Settings.Default.HashKey);
-                    System.Diagnostics.Process.Start(path);
+                    if (args.Length < 3) return;
+                    DownloadFile(args[1], args[2]);
                     break;
             }
         }
@@ -144,10 +147,10 @@ namespace ProgramDeployerServer
             if (!remoteDirPath.EndsWith("/")) remoteDirPath += "/";
             Regex regPattern = new Regex((pattern ?? ".*").ToLower());
             HashSet<string> ignoredFiles = new HashSet<string>();
-            if (File.Exists(localDirPath + @"\.deploy-ignore"))
+            if (File.Exists(localDirPath + @"\deploy-ignore"))
             {
-                ignoredFiles.Add(".deploy-ignore");
-                foreach (string line in File.ReadAllLines(localDirPath + @"\.deploy-ignore"))
+                ignoredFiles.Add("deploy-ignore");
+                foreach (string line in File.ReadAllLines(localDirPath + @"\deploy-ignore"))
                     ignoredFiles.Add(line.ToLower());
             }
 
@@ -158,6 +161,29 @@ namespace ProgramDeployerServer
                 if (ignoredFiles.Contains(filename.ToLower())) continue;
                 string remotePath = f.Substring(localDirPath.Length + 1).Replace('\\', '/');
                 PushFile(remoteDirPath + remotePath, f);
+            }
+        }
+
+        public void DownloadFile(string remote, string local)
+        {
+            string localdir = Path.GetDirectoryName(local);
+            if (!Directory.Exists(localdir))
+                Directory.CreateDirectory(localdir);
+
+            remote = ProgramDeployerClient.Httpd.GetSignedUrl(remote, Properties.Settings.Default.HashKey);
+            Console.WriteLine("<< Downloading {0} to {1}...", remote, local);
+            new WebClient().DownloadFile(remote, local);
+        }
+
+        public void DownloadDirectory(string remote, string local)
+        {
+            if (!Directory.Exists(local)) Directory.CreateDirectory(local);
+            string[] ls = ProgramDeployerClient.Httpd.DownloadString(remote + "?ls", Properties.Settings.Default.HashKey)
+                .Split('\n');
+            foreach (var f in ls)
+            {
+                if (!f.EndsWith("/"))
+                    DownloadFile(f, local + Path.DirectorySeparatorChar + f);
             }
         }
 
